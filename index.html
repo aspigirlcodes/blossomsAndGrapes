@@ -63,6 +63,46 @@
 				.attr('width', w  )
 				.attr('height', margin.middle - 10)
 				.attr('fill', '#dddddd')
+			
+			var legend = [{
+				color: 	"#850030",
+				width: 1,
+				text: "Grape harvest day"
+			},
+			{
+				color: 	"#850030",
+				width: 4,
+				text: "Grape harvest day central moving average (31)"
+			},
+			{
+				color: 	"#f98dbe",
+				width: 1,
+				text: "Cherry blossom day"
+			},
+			{
+				color: 	"#f98dbe",
+				width: 4,
+				text: "Cherry Blossom day central moving average (31)"
+			},]
+			
+			//legend
+			legend.forEach( (val, i) =>{
+				svg.append("line")
+					.attr("x1", margin.left + 15 )
+					.attr("y1", margin.top + 15 + i*35)
+					.attr("x2", margin.left + 35)
+					.attr("y2", margin.top + 15 + i*35)
+					.attr("stroke", val.color)
+					.attr("stroke-width", val.width)
+
+				svg.append("text")
+					.attr("x", margin.left + 40)
+					.attr("y", margin.top + 15 + i*35)
+					.text(val.text)
+					.style("font-size", "15px")
+					.attr("alignment-baseline","middle")
+			})
+
 
 			var xScale = d3.scaleLinear()
 				.domain([800, 2010])
