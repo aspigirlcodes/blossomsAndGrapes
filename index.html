@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Early Bloomers</title>
+		<link href="https://fonts.googleapis.com/css?family=Permanent+Marker&display=swap" rel="stylesheet"> 
+		<script src="https://d3js.org/d3.v5.min.js"></script>
+		<style type="text/css">
+			body, html {
+				margin: 0;
+				padding: 0;
+				height: 100%;
+			}	
+
+			#viz-container {
+				width: 80%;
+				margin: auto; 
+				height: 100%;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<div id="viz-container">
+
+		</div>
+		
+		<script type="text/javascript">
+		
+		var drawDOY = function (cherryData, grapeData){
+			var svg = d3.select("#viz-container").append("svg")
+				.attr("width", "100%")
+				.attr("height", "100%")
+			var margin = {top: 50, right: 50, bottom: 50, left: 50, middle: 50}
+			var w = +svg.style("width").replace("px", "") - margin.left - margin.right
+			var h = (+svg.style("height").replace("px", "") - margin.top - margin.bottom - margin.middle) / 2
+
+			svg.append("rect")
+				.attr('x', margin.left)
+				.attr('y', margin.top + h + 5)
+				.attr('width', w  )
+				.attr('height', margin.middle - 10)
+				.attr('fill', '#dddddd')
+
+			var xScale = d3.scaleLinear()
+				.domain([800, 2010])
+				.range([0, w])
+			var cherryScale = d3.scaleLinear()
+				.domain(d3.extent(cherryData, d => d.Value))
+				.range([h, 0])
+			var grapeScale = d3.scaleLinear()
+				.domain(d3.extent(grapeData, d => d.Value))
+				.range([h, 0])
+			
+			var cherryLine = d3.line()
+				.x(d => xScale(d.Year)) 
+				.y(d => cherryScale(d.Value))  
+				.curve(d3.curveMonotoneX)
+			
+			var grapeLine = d3.line()
+				.x(d => xScale(d.Year)) 
+				.y(d => grapeScale(d.Value))  
+				.curve(d3.curveMonotoneX)
+
+			var cherryGroup = svg.append("g")
+			  	.attr("transform", "translate(" + margin.left + "," + (margin.top + h + margin.middle) + ")")
+			
+			var grapeGroup = svg.append("g")
+			  	.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+				  
+			cherryGroup.append("g")
+		    	.attr("class", "x-axis")
+		    	.attr("transform", "translate(0," + h + ")")
+		    	.call(d3.axisBottom(xScale)
+						.tickFormat(d3.format(".0f")))
+
+			cherryGroup.append("g")
+		    	.attr("class", "y-axis")
+		    	.call(d3.axisLeft(cherryScale).tickSizeOuter(0))
+			
+			grapeGroup.append("g")
+		    	.attr("class", "y-axis")
+		    	.call(d3.axisLeft(grapeScale).tickSizeOuter(0))
+				 
+			cherryGroup.append("path")
+    			.attr("class", "line")  
+    			.attr("d", cherryLine(cherryData))
+				.attr("fill", "none")
+				.attr("stroke", "#f98dbe")
+				.attr("stroke-width", 1)
+				.attr("stroke-opacity, 0.5")
+
+			var averageCherryData = movingAverage(cherryData, 30)
+
+			cherryGroup.append("path")
+    			.attr("class", "line")  
+    			.attr("d", cherryLine(averageCherryData))
+				.attr("fill", "none")
+				.attr("stroke", "#f98dbe")
+				.attr("stroke-width", 4)
+
+			cherryGroup.append("image")
+				.attr('x', w - 55)
+				.attr('y', 5)
+				.attr('width', 50)
+				.attr('height', 50)
+				.attr("xlink:href", "cherry-blossom.png")
+				.append("title").text( "Cherryblossom Full Flower Day")
+			
+			cherryGroup.append("text")
+				.text('Cherryblossom Full Flower Day')
+				.attr('text-anchor', 'end')
+				.attr('font-family', 'Permanent Marker')
+				.attr('font-size', '35px')
+				.attr('x', w - 60)
+				.attr('y', 30)
+				.attr('fill', "#f98dbe")
+			
+			cherryGroup.append("text")
+				.text('Kyoto, JPN')
+				.attr('text-anchor', 'end')
+				.attr('font-family', 'Permanent Marker')
+				.attr('font-size', '20px')
+				.attr('x', w - 60)
+				.attr('y', 50)
+				.attr('fill', "#f98dbe")
+
+			grapeGroup.append("path")
+    			.attr("class", "line")  
+    			.attr("d", grapeLine(grapeData))
+				.attr("fill", "none")
+				.attr("stroke", "#850030")
+				.attr("stroke-width", 1)
+				.attr("stroke-opacity, 0.5")
+
+			var averageGrapeData = movingAverage(grapeData, 30)
+
+			grapeGroup.append("path")
+    			.attr("class", "line")  
+    			.attr("d", grapeLine(averageGrapeData))
+				.attr("fill", "none")
+				.attr("stroke", "#850030")
+				.attr("stroke-width", 4)
+
+			grapeGroup.append("image")
+				.attr('x', w - 55)
+				.attr('y', h - 55)
+				.attr('width', 50)
+				.attr('height', 50)
+				.attr("xlink:href", "grapes.png")
+				.append("title").text( "Grape Harvest Day")
+
+			grapeGroup.append("text")
+				.text('Grape Harvest Day')
+				.attr('text-anchor', 'end')
+				.attr('font-family', 'Permanent Marker')
+				.attr('font-size', '35px')
+				.attr('x', w - 60)
+				.attr('y', h - 30)
+				.attr('fill', "#850030")
+
+			grapeGroup.append("text")
+				.text('Burgundy, FR')
+				.attr('text-anchor', 'end')
+				.attr('font-family', 'Permanent Marker')
+				.attr('font-size', '20px')
+				.attr('x', w - 60)
+				.attr('y', h - 10)
+				.attr('fill', "#850030")
+
+			svg.append("text")
+				.text("Year")
+				.attr("text-anchor", "middle")
+				.attr("x", w/2 + margin.left)
+				.attr("y", 2 * h + margin.top + margin.middle + margin.bottom - 5)
+			
+			svg.append("text")
+				.text("Day of Year")
+				.attr("text-anchor", "middle")
+				.attr("transform", "translate(" + 15 + "," + (h + margin.top + margin.middle/2) + "), rotate(-90)" )
+
+		}
+		
+		var movingAverage = function (data, window){
+			var startYear = data[0].Year + window
+			var endYear = data[data.length - 1].Year
+			return Array.from( Array( endYear-startYear + 1 ), (d, i) => ({Year: startYear + i}))
+				.map(d => ({Year: d.Year, Slice:data.filter(t => t.Year <= d.Year && t.Year > d.Year - window).map(t => t.Value)}))
+				.map(d => ({Year: d.Year, Value:d.Slice.reduce((a,b) => a+b ) / d.Slice.length}))
+			
+		}
+
+		var drawStripes = function (data, reverse=false, title ="", subtitle=""){
+			var svg = d3.select("#viz-container").append("svg")
+				.attr("width", "100%")
+				.attr("height", "200px")
+			var margin = {top: 50, right: 50, bottom: 0, left: 50}
+			var w = +svg.style("width").replace("px", "") - margin.left - margin.right
+			var h = +svg.style("height").replace("px", "") - margin.top - margin.bottom
+			var step = w / data.length
+			var colorScale
+			if (reverse){
+				colorScale = d3.scaleSequential([d3.min(data, d => d.Value), d3.max(data, d => d.Value)] , d3.interpolateRdBu)
+			} else{
+				colorScale = d3.scaleSequential([d3.max(data, d => d.Value), d3.min(data, d => d.Value)] , d3.interpolateRdBu)
+			}
+
+			var group = svg.append("g")
+			  	.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+			group.selectAll("rect.klima")
+				.data(data)
+				.enter().append("rect")
+				.attr("class", "klima")
+				.attr("width", step)
+				.attr("height", h)
+				.attr("x", (d,i) => i * step)
+				.attr("y", d => 0)
+				.style("fill", d => isNaN(d.Value) ? "#999999": colorScale(d.Value))
+				.append("title").text(d => d.Year)
+
+			svg.append("text")
+				.text(title)
+				.attr("text-anchor", "middle")
+				.attr("x", w/2 + margin.left)
+				.attr("y", margin.top - 30)
+				.attr("font-size", 20)
+			
+			svg.append("text")
+				.text(subtitle)
+				.attr("text-anchor", "middle")
+				.attr("x", w/2 + margin.left)
+				.attr("y", margin.top - 10)
+				.attr("font-size", 15)
+			
+		}
+
+		var anomaly = function(data, transform) {
+			var filtered = data.filter(d => d.Value !== undefined)
+			var average = filtered.reduce((a,b) => a + b.Value, 0) /filtered.length
+			return data.map(d => ({Year: d.Year, Value: transform(d.Value - average)}))
+		}
+
+				
+		d3.csv("data.csv").then(data => {
+			var cherryData = data.map(d => ({Year: +d.Year, Value: +d.FFD})).filter(d => d.Value !== 0)	
+			var grapeData = data.map(d => ({Year:+d.Year, Value: +d.GHD})).filter(d => d.Value !== 0).map(d => ({Year:d.Year, Value: 243 + d.Value}))
+			drawDOY(cherryData, grapeData)
+			var tempFr = data.map(d => ({Year: +d.Year, Value: d.Fr_temp==="" ? undefined : +d.Fr_temp})).filter(d => d.Year >= 1901 && d.Year<=2006)
+			drawStripes(anomaly(tempFr, Math.cbrt), false, "April till August Average Temperature in Dijon from 1901 till 2006", "(blue = colder, red = warmer)")
+			var grape = data.map(d => ({Year: +d.Year, Value: d.GHD==="" ? undefined : Math.cbrt(+d.GHD)})).filter(d => d.Year >= 1901 && d.Year<=2006)
+			drawStripes(anomaly(grape, Math.cbrt), true, "Grape Harvest Day in Burgundy Wine Region from 1901 till 2006", "(blue = later, red = earlier, grey = no data)")
+			var tempJpn = data.map(d => ({Year: +d.Year, Value: d.Jpn_temp==="" ? undefined : Math.cbrt(+d.Jpn_temp)})).filter(d => d.Year >= 1901 && d.Year<=2006)
+			drawStripes(anomaly(tempJpn, Math.cbrt), false, "March Average Temperature in Japan from 1901 till 2006", "(blue = colder, red = warmer)")
+			var cherry = data.map(d => ({Year: +d.Year, Value: d.FFD==="" ? undefined : Math.cbrt(+d.FFD)})).filter(d => d.Year >= 1901 && d.Year<=2006)
+			drawStripes(anomaly(cherry, Math.cbrt), true, "Kyoto Cherryblossom Full Flowering Day from 1901 till 2006", "(blue = later, red = earlier, grey = no data)")
+
+		})						
+		
+		</script>
+	</body>
+</html>
