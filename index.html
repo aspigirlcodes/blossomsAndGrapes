@@ -12,23 +12,45 @@
 				height: 100%;
 			}	
 
-			#viz-container {
+			h1, h2 {
+				text-align: center;
+				font-weight: 300;
+			}
+
+			#viz-container1 {
 				width: 80%;
 				margin: auto; 
 				height: 100%;
+			}
+
+			#sources {
+				text-align: center;
 			}
 			
 		</style>
 	</head>
 	<body>
-		<div id="viz-container">
+		<h1>Nature observations vs. Climate change</h1>
+		<h2>Grape Harvest and Cherry blossom day of the year through history</h2>
+		<div id="viz-container1">
 
+		</div>
+		<h2>Qualitative comparison with temperature data</h2>
+		<div id="viz-container2">
+
+		</div>
+		<h2>Data Sources</h2>
+		<div id="sources">
+			<p>Grape harvest: <a href="https://www.ncdc.noaa.gov/paleo-search/study/13194">Data</a> and <a href="https://cp.copernicus.org/articles/8/1403/2012/">corresponding Article</a>.</p>
+			<p>Cherry blossom: <a href="http://atmenv.envi.osakafu-u.ac.jp/aono/kyophenotemp4/">Data</a></p>
+			<p>Temperature: <a href="http://berkeleyearth.org/data-new/">Data</a></p>
+			<p>Thanks to Jeremy Singer-Vine for his inspiring newsletter Data is Plural</p>
 		</div>
 		
 		<script type="text/javascript">
 		
-		var drawDOY = function (cherryData, grapeData){
-			var svg = d3.select("#viz-container").append("svg")
+		var drawDOY = function (container, cherryData, grapeData){
+			var svg = d3.select(container).append("svg")
 				.attr("width", "100%")
 				.attr("height", "100%")
 			var margin = {top: 50, right: 50, bottom: 50, left: 50, middle: 50}
@@ -90,7 +112,7 @@
 				.attr("stroke-width", 1)
 				.attr("stroke-opacity, 0.5")
 
-			var averageCherryData = movingAverage(cherryData, 30)
+			var averageCherryData = centralMovingAverage(cherryData, 31)
 
 			cherryGroup.append("path")
     			.attr("class", "line")  
@@ -133,7 +155,7 @@
 				.attr("stroke-width", 1)
 				.attr("stroke-opacity, 0.5")
 
-			var averageGrapeData = movingAverage(grapeData, 30)
+			var averageGrapeData = centralMovingAverage(grapeData, 31)
 
 			grapeGroup.append("path")
     			.attr("class", "line")  
@@ -190,8 +212,21 @@
 			
 		}
 
-		var drawStripes = function (data, reverse=false, title ="", subtitle=""){
-			var svg = d3.select("#viz-container").append("svg")
+		var centralMovingAverage = function (data, window){
+			if(! window%2 === 1){
+				console.error("central moving average requires odd window length")
+				return []
+			}
+			var startYear = data[0].Year + Math.ceil(window/2)
+			var endYear = data[data.length - 1].Year - Math.ceil(window/2)
+			return Array.from( Array( endYear-startYear + 1 ), (d, i) => ({Year: startYear + i}))
+				.map(d => ({Year: d.Year, Slice:data.filter(t => t.Year <= d.Year + Math.floor(window/2) && t.Year >= d.Year - Math.floor(window/2)).map(t => t.Value)}))
+				.map(d => ({Year: d.Year, Value:d.Slice.reduce((a,b) => a+b ) / d.Slice.length}))
+			
+		}
+
+		var drawStripes = function (container, data, reverse=false, title ="", subtitle=""){
+			var svg = d3.select(container).append("svg")
 				.attr("width", "100%")
 				.attr("height", "200px")
 			var margin = {top: 50, right: 50, bottom: 0, left: 50}
@@ -245,15 +280,15 @@
 		d3.csv("data.csv").then(data => {
 			var cherryData = data.map(d => ({Year: +d.Year, Value: +d.FFD})).filter(d => d.Value !== 0)	
 			var grapeData = data.map(d => ({Year:+d.Year, Value: +d.GHD})).filter(d => d.Value !== 0).map(d => ({Year:d.Year, Value: 243 + d.Value}))
-			drawDOY(cherryData, grapeData)
+			drawDOY("#viz-container1", cherryData, grapeData)
 			var tempFr = data.map(d => ({Year: +d.Year, Value: d.Fr_temp==="" ? undefined : +d.Fr_temp})).filter(d => d.Year >= 1901 && d.Year<=2006)
-			drawStripes(anomaly(tempFr, Math.cbrt), false, "April till August Average Temperature in Dijon from 1901 till 2006", "(blue = colder, red = warmer)")
+			drawStripes("#viz-container2", anomaly(tempFr, Math.cbrt), false, "April till August Average Temperature in Dijon from 1901 till 2006", "(blue = colder, red = warmer)")
 			var grape = data.map(d => ({Year: +d.Year, Value: d.GHD==="" ? undefined : Math.cbrt(+d.GHD)})).filter(d => d.Year >= 1901 && d.Year<=2006)
-			drawStripes(anomaly(grape, Math.cbrt), true, "Grape Harvest Day in Burgundy Wine Region from 1901 till 2006", "(blue = later, red = earlier, grey = no data)")
+			drawStripes("#viz-container2", anomaly(grape, Math.cbrt), true, "Grape Harvest Day in Burgundy Wine Region from 1901 till 2006", "(blue = later, red = earlier, grey = no data)")
 			var tempJpn = data.map(d => ({Year: +d.Year, Value: d.Jpn_temp==="" ? undefined : Math.cbrt(+d.Jpn_temp)})).filter(d => d.Year >= 1901 && d.Year<=2006)
-			drawStripes(anomaly(tempJpn, Math.cbrt), false, "March Average Temperature in Japan from 1901 till 2006", "(blue = colder, red = warmer)")
+			drawStripes("#viz-container2", anomaly(tempJpn, Math.cbrt), false, "March Average Temperature in Japan from 1901 till 2006", "(blue = colder, red = warmer)")
 			var cherry = data.map(d => ({Year: +d.Year, Value: d.FFD==="" ? undefined : Math.cbrt(+d.FFD)})).filter(d => d.Year >= 1901 && d.Year<=2006)
-			drawStripes(anomaly(cherry, Math.cbrt), true, "Kyoto Cherryblossom Full Flowering Day from 1901 till 2006", "(blue = later, red = earlier, grey = no data)")
+			drawStripes("#viz-container2", anomaly(cherry, Math.cbrt), true, "Kyoto Cherryblossom Full Flowering Day from 1901 till 2006", "(blue = later, red = earlier, grey = no data)")
 
 		})						
 		
